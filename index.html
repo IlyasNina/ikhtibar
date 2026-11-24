@@ -73,7 +73,7 @@ function openSubj(s){cur=s;state='subj';$('ttl').textContent=s.ar;$('back').styl
  if(!s.ex.length){$('soon').innerHTML='قَرِيبًا…<small>Les exercices arrivent bientôt.</small>';}
  s.ex.forEach(e=>$('exos').appendChild(tile({ar:e.ar,fr:e.fr,c:s.c},()=>openExo(e))));
  setScreen('subj');}
-function openExo(e){state='fr';$('ttl').textContent=e.ar;logOpen(e.k);const s=SRC[e.k],i=s.lastIndexOf('</body>');const P=(['isl','gh','hi','en'].includes(e.k)?PRG(e.k):'')+(e.k==='en'?'':'<style>@media (max-width:640px){.match{grid-template-columns:1fr 1fr!important;gap:10px!important}.match::before{content:"اِلْمَسْ عُنْصُرًا مِنَ اليَمِينِ، ثُمَّ مَا يُنَاسِبُهُ مِنَ اليَسَارِ.";grid-column:1/-1;font-size:18px;color:#64748b;text-align:center;line-height:1.8}.mcol{gap:10px}.itm{font-size:21px!important;padding:12px 8px!important;min-height:64px;line-height:1.7}}</style>');$('fr').srcdoc=i<0?s+TRK(e.k)+P:s.slice(0,i)+TRK(e.k)+P+s.slice(i);setScreen('fr');}
+function openExo(e){state='fr';$('ttl').textContent=e.ar;logOpen(e.k);const s=SRC[e.k],i=s.lastIndexOf('</body>');const P=(['isl','gh','hi','en','mult'].includes(e.k)?PRG(e.k):['conv','prob'].includes(e.k)?MPRG(e.k):'')+(e.k==='en'?'':'<style>@media (max-width:640px){.match{grid-template-columns:1fr 1fr!important;gap:10px!important}.match::before{content:"اِلْمَسْ عُنْصُرًا مِنَ اليَمِينِ، ثُمَّ مَا يُنَاسِبُهُ مِنَ اليَسَارِ.";grid-column:1/-1;font-size:18px;color:#64748b;text-align:center;line-height:1.8}.mcol{gap:10px}.itm{font-size:21px!important;padding:12px 8px!important;min-height:64px;line-height:1.7}}</style>');$('fr').srcdoc=i<0?s+TRK(e.k)+P:s.slice(0,i)+TRK(e.k)+P+s.slice(i);setScreen('fr');}
 $('back').onclick=()=>{if(state==='fr'){$('fr').srcdoc='';openSubj(cur);}else{state='home';$('ttl').textContent='Révisions ikhtibarat';$('back').style.display='none';setScreen('home');}};
 /* ---------- suivi des erreurs (compte rendu) ---------- */
 const LKEY='ilyasLogV1';let LOG=[];
@@ -153,6 +153,15 @@ const progFn=function(K){
   render();
   try{parent.postMessage({ilyasReady:1,ex:K},'*');}catch(e){}
 };
+const mprgFn=function(K){
+  const tabs=document.getElementById('tabs');if(!tabs)return;const posted=new Set();
+  const sync=()=>{[...tabs.querySelectorAll('.tb')].forEach((t,i)=>{if(t.classList.contains('ok')&&!posted.has(i)){posted.add(i);try{parent.postMessage({ilyasDone:1,ex:K,i:i,t:Date.now()},'*');}catch(e){}}});};
+  new MutationObserver(sync).observe(tabs,{attributes:true,attributeFilter:['class'],subtree:true,childList:true});
+  window.addEventListener('message',ev=>{const d=ev.data;if(d&&d.ilyasState){const S=d.ilyasState||{};Object.keys(S).forEach(i=>{try{doneSet.add(+i);}catch(e){}posted.add(+i);});try{markTabs();}catch(e){}}});
+  tabs.addEventListener('click',e=>{if(e.target.closest('.tb'))setTimeout(()=>{const c=document.querySelector('.card');if(c)c.scrollIntoView({behavior:'smooth',block:'start'});},60);});
+  try{parent.postMessage({ilyasReady:1,ex:K},'*');}catch(e){}
+};
+const MPRG=k=>'<script>('+mprgFn.toString()+')('+JSON.stringify(k)+')<\/script>';
 const PRG=k=>'<script>('+progFn.toString()+')('+JSON.stringify(k)+')<\/script>';
 const TRK=k=>'<script>('+trackerFn.toString()+')('+JSON.stringify(k)+')<\/script>';
 const nrm=s=>(s||'').replace(/[ً-ٰٟـ]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي');
