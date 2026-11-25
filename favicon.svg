@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#0B2A5B"/>
+  <!-- feuille de copie inclinée avec 20/20 -->
+  <g transform="rotate(-8 30 28)">
+    <rect x="8" y="8" width="44" height="40" rx="3" fill="#fff"/>
+    <text x="30" y="33" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="16" textLength="38" lengthAdjust="spacingAndGlyphs" fill="#0E9F45">20/20</text>
+  </g>
+  <!-- stylo doré : pointe fine métallique, corps, capuchon à agrafe -->
+  <g transform="translate(33 36) rotate(45)" stroke="#0B2A5B" stroke-width="1.1" stroke-linejoin="round">
+    <path d="M0 0L6-2.6V2.6z" fill="#5E656C"/>
+    <rect x="6" y="-3" width="4" height="6" fill="#CBD5E1"/>
+    <rect x="10" y="-3.2" width="21" height="6.4" rx="1.2" fill="#F2B632"/>
+    <rect x="21" y="-3.2" width="11" height="6.4" rx="3" fill="#B87A0E"/>
+    <rect x="22" y="-5.4" width="8" height="2.2" rx="1.1" fill="#F2B632"/>
+  </g>
+</svg>
