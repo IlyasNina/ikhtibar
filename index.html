@@ -213,19 +213,20 @@ function renderRep(){
   const el=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!=null)n.textContent=txt;return n;};
   const subs=SUBJ.filter(s=>s.ex.length).map(s=>s.fr);
   if(!repSubj||!subs.includes(repSubj))repSubj=subs[0];
-  const since=repRange?Date.now()-repRange*864e5:0;
+  const since=repRange===1?new Date().setHours(0,0,0,0):repRange?Date.now()-repRange*864e5:0;
   const ev=LOG.filter(e=>e.t>=since&&((EXN[e.ex]||{}).subj===repSubj));
   const errs=ev.filter(e=>!e.open),opens=ev.filter(e=>e.open);
   const a1=el('div','acts');
   subs.forEach(s=>{const n=LOG.filter(e=>e.t>=since&&!e.open&&(EXN[e.ex]||{}).subj===s).length;const b=el('button','b'+(repSubj===s?' on':''),s+' ('+n+')');b.onclick=()=>{repSubj=s;confirmDel=false;renderRep();};a1.appendChild(b);});
   w.appendChild(a1);
   const a2=el('div','acts');
-  [[7,'7 derniers jours'],[0,'Tout']].forEach(([r,l])=>{const b=el('button','b'+(repRange===r?' on':''),l);b.onclick=()=>{repRange=r;renderRep();};a2.appendChild(b);});
+  [[1,'Aujourd\'hui'],[7,'7 derniers jours'],[0,'Tout']].forEach(([r,l])=>{const b=el('button','b'+(repRange===r?' on':''),l);b.onclick=()=>{repRange=r;renderRep();};a2.appendChild(b);});
   w.appendChild(a2);
   const sum=el('div','sum');
   [[errs.length,'erreurs'],[opens.length,'exercices ouverts'],[ev.length?fdate(ev[ev.length-1].t):'—','dernière activité']].forEach(([n,l])=>{const k=el('div','kpi');const b=el('b',null,String(n));if(typeof n==='string')b.style.fontSize='22px';k.append(b,el('span',null,l));sum.appendChild(k);});
   w.appendChild(sum);
-  const lines=['Compte rendu d\'Ilyas — '+repSubj+' ('+(repRange?repRange+' derniers jours':'tout')+') : '+errs.length+' erreurs, '+opens.length+' exercices ouverts.'];
+  if(errs.length){const pb=el('button','b pdfb','\uD83D\uDCC4 PDF pour papa ('+errs.length+' erreur'+(errs.length>1?'s':'')+')');pb.onclick=()=>openPdf(errs,repSubj,repRange===1?'aujourd\'hui':repRange?repRange+' derniers jours':'tout l\'historique');const pw=el('div','acts');pw.appendChild(pb);w.appendChild(pw);}
+  const lines=['Compte rendu d\'Ilyas — '+repSubj+' ('+(repRange===1?'aujourd\'hui':repRange?repRange+' derniers jours':'tout')+') : '+errs.length+' erreurs, '+opens.length+' exercices ouverts.'];
   if(!errs.length){w.appendChild(el('div','box','Aucune erreur enregistrée en '+repSubj+' sur cette période.'));}
   else{
     const g={};errs.forEach(e=>{(g[grp(e)]=g[grp(e)]||[]).push(e);});
@@ -254,6 +255,35 @@ function renderRep(){
   const del=el('button','b red',confirmDel?'Confirmer : tout effacer':'Effacer tout l\'historique');del.onclick=()=>{if(!confirmDel){confirmDel=true;renderRep();return;}LOG=[];saveLog();confirmDel=false;renderRep();};a3.appendChild(del);
   const rs=el('button','b',confirmRs?'Confirmer : remettre à zéro':'Remettre les exercices à zéro (coches « fait »)');rs.onclick=()=>{if(!confirmRs){confirmRs=true;renderRep();return;}DONE={};saveDone();confirmRs=false;renderRep();};a3.appendChild(rs);
   w.appendChild(a3);
+}
+const PDF_CSS="body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#0f172a;margin:0;background:#fff}.pg{max-width:860px;margin:0 auto;padding:18px}.pg h1{font-size:26px;margin:0 0 4px;color:#0f766e}.pg .sub{color:#475569;font-size:15px;margin-bottom:14px}.pg h2{font-size:21px;margin:22px 0 8px;color:#0f766e;border-bottom:2px solid #99f6e4;padding-bottom:4px;break-after:avoid}.pg .pbox{border:1px solid #cbd5e1;border-radius:12px;padding:10px 14px;margin:0 0 12px}.pg .pbox small{color:#64748b}.pg .ar{direction:rtl;font-size:20px;line-height:1.9;font-family:'Noto Naskh Arabic','Noto Sans Arabic',Tahoma,Arial,sans-serif}.pg iframe{display:block;width:100%;border-radius:10px}@page{size:A4;margin:12mm}@media print{.noprint{display:none!important}}";
+function openPdf(errs,subj,per){
+  const h=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!=null)n.textContent=txt;return n;};
+  const old=document.getElementById('pdfv');if(old)old.remove();
+  const ov=h('div');ov.id='pdfv';ov.style.cssText='position:fixed;inset:0;z-index:99999;overflow:auto;background:#fff;direction:ltr';
+  const st=h('style');st.textContent=PDF_CSS+"@media print{body>*:not(#pdfv){display:none!important}#pdfv{position:static!important;overflow:visible!important}}";ov.appendChild(st);
+  const bar=h('div','noprint');bar.style.cssText='position:sticky;top:0;background:#f1f5f9;border-bottom:2px solid #cbd5e1;padding:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;z-index:2;font:600 16px system-ui,sans-serif';
+  const mkb=(t,fn)=>{const b=h('button',null,t);b.style.cssText='font:700 17px system-ui,sans-serif;padding:10px 14px;border-radius:12px;border:2px solid #0f766e;background:#fff;color:#0f766e;cursor:pointer';b.onclick=fn;bar.appendChild(b);return b;};
+  const status=h('span',null,'Préparation des images…');
+  const pr=mkb('🖨️ Imprimer / Enregistrer en PDF',()=>{try{window.print();}catch(x){}});
+  const dl=mkb('⬇️ Télécharger (fichier .html)',()=>{try{const html='<!doctype html><html><head><meta charset="utf-8"><title>Compte rendu d’Ilyas</title><style>'+PDF_CSS+'</style></head><body>'+pg.outerHTML+'</body></html>';const u=URL.createObjectURL(new Blob([html],{type:'text/html'}));const a=document.createElement('a');a.href=u;a.download='compte-rendu-ilyas.html';document.body.appendChild(a);a.click();a.remove();}catch(x){status.textContent='Téléchargement impossible ici.';}});
+  mkb('✖ Fermer',()=>ov.remove());bar.appendChild(status);ov.appendChild(bar);
+  const pg=h('div','pg');
+  pg.appendChild(h('h1',null,'Compte rendu d’Ilyas — '+subj));
+  const g={};errs.forEach(e=>{(g[grp(e)]=g[grp(e)]||[]).push(e);});
+  pg.appendChild(h('div','sub','Période : '+per+' · '+errs.length+' erreur'+(errs.length>1?'s':'')+' · '+Object.keys(g).length+' leçon'+(Object.keys(g).length>1?'s':'')+' · édité le '+new Date().toLocaleDateString('fr-FR')));
+  let frames=0,loaded=0;
+  Object.entries(g).sort((a,b)=>b[1].length-a[1].length).forEach(([k,l])=>{
+    pg.appendChild(h('h2',null,k+' — '+l.length+' erreur'+(l.length>1?'s':'')));
+    l.slice().sort((a,b)=>a.t-b.t).forEach(e=>{
+      const bx=h('div','pbox');bx.appendChild(h('small',null,fdate(e.t)+(e.card?' · n°'+e.card:'')));
+      const qq=e.q||e.seg||e.ask||'';if(qq)bx.appendChild(h('div','ar',qq));
+      if(e.a){const x=h('div',null,'Sa réponse : ');x.appendChild(h('span','ar',e.a));bx.appendChild(x);}
+      if(e.snap||parseInt(e.card,10)>0){const sf=snapFrame(e);bx.appendChild(sf);[...sf.children].forEach(n=>{if(n.tagName==='DIV')n.style.breakAfter='avoid';});sf.querySelectorAll('iframe').forEach(f=>{frames++;const wr=h('div','fw');wr.style.cssText='overflow:hidden;break-inside:avoid;page-break-inside:avoid;height:340px';f.parentNode.insertBefore(wr,f);wr.appendChild(f);const SC=0.55;f.style.width=(100/SC)+'%';f.style.transform='scale('+SC+')';f.style.transformOrigin='0 0';f.style.height='520px';f.onload=()=>{setTimeout(()=>{try{const hh=Math.min(1500,f.contentDocument.documentElement.scrollHeight+12);if(hh>80){f.style.height=hh+'px';wr.style.height=Math.round(hh*SC)+'px';}}catch(x){}loaded++;status.textContent=loaded<frames?'Préparation des images… '+loaded+'/'+frames:'Prêt ✔ — touche « Imprimer / Enregistrer en PDF »';},900);};});}
+      pg.appendChild(bx);});
+  });
+  ov.appendChild(pg);document.body.appendChild(ov);ov.scrollTop=0;
+  if(!frames)status.textContent='Prêt ✔';
 }
 function openRep(){state='rep';$('ttl').textContent='Compte rendu';$('back').style.display='block';confirmDel=false;confirmRs=false;renderRep();setScreen('rep');}
 (function(){const b=$('repbtn');let tm=null;
