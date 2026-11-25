@@ -4,6 +4,8 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B2A5B">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -294,4 +296,6 @@ function openRep(){state='rep';$('ttl').textContent='Compte rendu';$('back').sty
   b.addEventListener('pointerdown',e=>{b.classList.add('hold');tm=setTimeout(()=>{stop();openRep();},1200);});
   ['pointerup','pointerleave','pointercancel'].forEach(n=>b.addEventListener(n,stop));
   b.addEventListener('contextmenu',e=>e.preventDefault());})();
-</script></body></html>
+</script>
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});</script>
+</body></html>
