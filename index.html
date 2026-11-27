@@ -22,6 +22,15 @@ body{display:flex;flex-direction:column}
 .tile:active{transform:scale(.97)}
 .tile small{display:block;font:700 20px system-ui,sans-serif;direction:ltr;text-shadow:none}
 .tile.soon{opacity:.85}
+.grid.cols{display:block}
+.duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;direction:ltr;align-items:start}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.gh2t{margin:0;direction:ltr;text-align:center;font:800 22px system-ui,sans-serif;color:#fff;border-radius:14px;padding:10px}
+.cols .tile{aspect-ratio:auto;width:100%;min-height:136px;font-size:23px}
+.cols .tile small{font-size:17px}
+.rest{margin-top:26px;padding-top:20px;border-top:4px solid #cbd5e1;display:flex;flex-direction:column;gap:14px}
+.rest .grid{width:100%;grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:640px){.duo{gap:10px}.gh2t{font-size:17px}.cols .tile{font-size:18px;padding:8px}.cols .tile small{font-size:14px}.rest .grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .soonmsg{text-align:center;font-size:26px;line-height:2;color:#64748b;margin-top:30px}
 .soonmsg small{display:block;font:18px system-ui,sans-serif}
 iframe{flex:1;width:100%;border:0;display:none;background:#fdf8ee}
@@ -111,10 +120,20 @@ const FLAG_UK='<svg viewBox="0 0 60 60" aria-hidden="true"><rect width="60" heig
 const ICON={'Français':[FLAG_FR,'Drapeau français'],'Anglais':[FLAG_UK,'Drapeau britannique'],'Éducation civique':['🤝','Poignée de main'],'Éducation islamique':['🕌','Mosquée'],'Sciences':['🔬','Microscope'],'Histoire et géographie':['🌍','Globe'],'Maths':['📐','Équerre']};
 SUBJ.forEach(s=>{const b=tile(s,()=>openSubj(s),' st'+(s.ex.length?'':' soon'));const i=ICON[s.fr];if(i){const d=document.createElement('span');d.className='disk';d.style.borderColor=s.c;d.setAttribute('role','img');d.setAttribute('aria-label',i[1]);d.innerHTML=i[0];b.prepend(d);}$('subjects').appendChild(b);});
 function setScreen(n){document.body.classList.toggle('athome',n==='home');document.body.classList.toggle('atrep',n==='rep');['home','subj','rep'].forEach(x=>$(x).classList.toggle('on',x===n));$('fr').classList.toggle('on',n==='fr');}
+// matières rangées en deux colonnes : [colonne de gauche, colonne de droite] ; le reste va en bas
+const GROUPS={'Histoire et géographie':[['Histoire',/^hi\d*$/],['Géographie',/^gh\d*$/]],'Maths':[['Géométrie',/^geo\d*$/],['Problèmes',/^prob\d*$/]]};
 function openSubj(s){cur=s;state='subj';$('ttl').textContent=s.ar;$('back').style.display='block';
  $('exos').textContent='';$('soon').innerHTML='';
  if(!s.ex.length){$('soon').innerHTML='قَرِيبًا…<small>Les exercices arrivent bientôt.</small>';}
- s.ex.forEach(e=>$('exos').appendChild(tile({ar:e.ar,fr:e.fr,c:s.c},()=>openExo(e))));
+ const box=$('exos'),G=GROUPS[s.fr];box.classList.toggle('cols',!!G);
+ const add=(to,e)=>to.appendChild(tile({ar:e.ar,fr:e.fr,c:s.c},()=>openExo(e)));
+ if(!G){s.ex.forEach(e=>add(box,e));}
+ else{const mk=(cls,to)=>{const d=document.createElement('div');d.className=cls;to.appendChild(d);return d;};
+  const head=(t,to)=>{const h=mk('gh2t',to);h.textContent=t;h.style.background=s.c;};
+  const duo=mk('duo',box);
+  G.forEach(g=>{const col=mk('col',duo);head(g[0],col);s.ex.filter(e=>g[1].test(e.k)).forEach(e=>add(col,e));});
+  const other=s.ex.filter(e=>!G.some(g=>g[1].test(e.k)));
+  if(other.length){const r=mk('rest',box);head('Le reste',r);const gr=mk('grid',r);other.forEach(e=>add(gr,e));}}
  setScreen('subj');}
 function openExo(e){state='fr';$('ttl').textContent=e.ar;logOpen(e.k);const s=pageSrc(e.k).replace(/<head[^>]*>/i,m=>m+HST(e.k)),i=s.lastIndexOf('</body>');const P=(/^((isl|gh|hi|en)\d?|mult|ord)$/.test(e.k)?PRG(e.k):/^(conv|prob\d?)$/.test(e.k)?MPRG(e.k):'')+(/^en\d?$/.test(e.k)?'':'<style>@media (max-width:640px){.match{grid-template-columns:1fr 1fr!important;gap:10px 56px!important}.match::before{content:"اِلْمَسْ عُنْصُرًا مِنَ اليَمِينِ، ثُمَّ مَا يُنَاسِبُهُ مِنَ اليَسَارِ.";grid-column:1/-1;font-size:18px;color:#64748b;text-align:center;line-height:1.8}.mcol{gap:10px}.itm{font-size:21px!important;padding:12px 8px!important;min-height:64px;line-height:1.7}}</style>');$('fr').srcdoc=i<0?s+TRK(e.k)+P+STJ(e.k):s.slice(0,i)+TRK(e.k)+P+STJ(e.k)+s.slice(i);setScreen('fr');}
 $('back').onclick=()=>{if(state==='fr'){$('fr').srcdoc='';openSubj(cur);}else{state='home';$('ttl').textContent='Révisions ikhtibarat';$('back').style.display='none';setScreen('home');}};
