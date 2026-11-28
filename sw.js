@@ -1,5 +1,5 @@
 // Changer ce numéro à chaque modification de ce fichier ou de la liste FICHIERS.
-const VERSION = 'v15';
+const VERSION = 'v16';
 const CACHE = 'ikhtibar-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.json',
