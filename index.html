@@ -386,6 +386,8 @@ const fbFn=function(){
       if(/^\{[^{}]*\}\.?$/.test(t)){d.dir='ltr';d.textContent=t.replace(/^\{|\}\.?$/g,'');}
       else if(typeof wrap==='function')wrap(t,d);else d.textContent=t;
       fb.appendChild(d);}
+    // sur téléphone, le bandeau tombe souvent sous le bas de l'écran : on l'y ramène (après les ajouts éventuels de la carte)
+    setTimeout(()=>{try{if(window.__ilyasReplay||!fb.isConnected)return;const r=fb.getBoundingClientRect();if(r.height&&(r.bottom>innerHeight||r.top<0))fb.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}},0);
   };
 };
 const FBK='<style>.fb.good,.fb.bad{display:block;border:0;box-shadow:none;border-radius:16px;padding:14px 18px;min-height:0;margin-top:10px;font-weight:400;line-height:1.5;text-align:start;overflow-wrap:anywhere}'
